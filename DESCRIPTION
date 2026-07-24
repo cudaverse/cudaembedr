@@ -1,0 +1,30 @@
+Package: cudaembedr
+Title: GPU-Aware Embeddings for R
+Version: 0.1.0
+Authors@R:
+    person("Yaoxiang", "Li", email = "liyaoxiang@outlook.com",
+           role = c("aut", "cre"))
+Description: Provides a common embedding interface for GPU-aware R workflows.
+    Includes UMAP and t-SNE adapters, a diffusion-map-style embedding with
+    optional CUDA distance computation, and adapters for cudaverse PCA and
+    single-cell workflow results. Every result records its actual compute
+    backend and source device.
+License: MIT + file LICENSE
+URL: https://github.com/cudaverse/cudaembedr
+BugReports: https://github.com/cudaverse/cudaembedr/issues
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Imports:
+    cudalearnr,
+    stats
+Remotes:
+    cudaverse/cudalearnr
+Suggests:
+    cudacellr,
+    cudatensr,
+    RSpectra,
+    Rtsne,
+    testthat (>= 3.0.0),
+    uwot
+Config/testthat/edition: 3
+Config/roxygen2/version: 8.0.0
