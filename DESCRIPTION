@@ -18,7 +18,9 @@ Imports:
     cudalearnr,
     stats
 Remotes:
-    cudaverse/cudalearnr
+    cudaverse/cudacellr,
+    cudaverse/cudalearnr,
+    cudaverse/cudatensr
 Suggests:
     cudacellr,
     cudatensr,
