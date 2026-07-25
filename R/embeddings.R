@@ -48,14 +48,39 @@
 
 .embedding_seed <- function(seed) {
   if (is.null(seed)) {
-    return(invisible(NULL))
+    return(NULL)
   }
   if (!is.numeric(seed) || length(seed) != 1L || is.na(seed) ||
-      !is.finite(seed) || seed != as.integer(seed)) {
+      !is.finite(seed)) {
     stop("`seed` must be NULL or one finite whole number.", call. = FALSE)
   }
-  set.seed(as.integer(seed))
-  invisible(NULL)
+  integer_seed <- suppressWarnings(as.integer(seed))
+  if (is.na(integer_seed) || seed != integer_seed) {
+    stop("`seed` must be NULL or one finite whole number.", call. = FALSE)
+  }
+  integer_seed
+}
+
+.with_embedding_seed <- function(seed, code) {
+  seed <- .embedding_seed(seed)
+  if (is.null(seed)) {
+    return(force(code))
+  }
+
+  had_seed <- exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+  if (had_seed) {
+    old_seed <- get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+  }
+  on.exit({
+    if (had_seed) {
+      assign(".Random.seed", old_seed, envir = .GlobalEnv)
+    } else if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) {
+      rm(".Random.seed", envir = .GlobalEnv)
+    }
+  }, add = TRUE)
+
+  set.seed(seed)
+  force(code)
 }
 
 .new_embedding <- function(coordinates, method, backend, input, parameters,
@@ -127,7 +152,6 @@ cuda_umap <- function(x, n_components = 2L, n_neighbors = 15L,
   if (!is.character(metric) || length(metric) != 1L || is.na(metric)) {
     stop("`metric` must be one character string.", call. = FALSE)
   }
-  .embedding_seed(seed)
   arguments <- list(
     X = input$matrix,
     n_neighbors = as.integer(n_neighbors),
@@ -141,7 +165,10 @@ cuda_umap <- function(x, n_components = 2L, n_neighbors = 15L,
   if (!is.null(n_epochs)) {
     arguments$n_epochs <- n_epochs
   }
-  coordinates <- do.call(uwot::umap, arguments)
+  coordinates <- .with_embedding_seed(
+    seed,
+    do.call(uwot::umap, arguments)
+  )
   .new_embedding(
     coordinates,
     method = "umap",
@@ -189,16 +216,18 @@ cuda_tsne <- function(x, n_components = 2L, perplexity = 30,
       !is.finite(theta) || theta < 0 || theta > 1) {
     stop("`theta` must be between 0 and 1.", call. = FALSE)
   }
-  .embedding_seed(seed)
-  fit <- Rtsne::Rtsne(
-    input$matrix,
-    dims = n_components,
-    perplexity = perplexity,
-    theta = theta,
-    pca = FALSE,
-    check_duplicates = FALSE,
-    verbose = FALSE,
-    ...
+  fit <- .with_embedding_seed(
+    seed,
+    Rtsne::Rtsne(
+      input$matrix,
+      dims = n_components,
+      perplexity = perplexity,
+      theta = theta,
+      pca = FALSE,
+      check_duplicates = FALSE,
+      verbose = FALSE,
+      ...
+    )
   )
   .new_embedding(
     fit$Y,

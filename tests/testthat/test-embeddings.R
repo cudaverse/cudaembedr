@@ -35,8 +35,11 @@ test_that("cuda_pca inputs compose with embeddings", {
 
 test_that("t-SNE adapter returns a common result", {
   skip_if_not_installed("Rtsne")
+  data <- embedding_data()
+  set.seed(99)
+  before <- .Random.seed
   fit <- cuda_tsne(
-    embedding_data(),
+    data,
     perplexity = 5,
     seed = 1,
     max_iter = 250
@@ -45,12 +48,16 @@ test_that("t-SNE adapter returns a common result", {
   expect_s3_class(fit, "cuda_embedding")
   expect_identical(dim(fit$coordinates), c(40L, 2L))
   expect_identical(fit$backend, "Rtsne")
+  expect_identical(.Random.seed, before)
 })
 
 test_that("UMAP adapter returns a common result", {
   skip_if_not_installed("uwot")
+  data <- embedding_data()
+  set.seed(99)
+  before <- .Random.seed
   fit <- cuda_umap(
-    embedding_data(),
+    data,
     n_neighbors = 5,
     n_epochs = 20,
     seed = 1
@@ -59,6 +66,7 @@ test_that("UMAP adapter returns a common result", {
   expect_s3_class(fit, "cuda_embedding")
   expect_identical(dim(fit$coordinates), c(40L, 2L))
   expect_identical(fit$backend, "uwot")
+  expect_identical(.Random.seed, before)
 })
 
 test_that("invalid embedding parameters fail clearly", {
