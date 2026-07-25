@@ -17,10 +17,10 @@ cuda_tsne(x, n_components = 2L, perplexity = 30, theta = 0.5, seed = NULL, ...)
 
 \item{seed}{Optional random seed.}
 
-\item{...}{Additional arguments passed to \code{uwot::umap()}.}
+\item{...}{Additional arguments passed to \code{Rtsne::Rtsne()}.}
 }
 \value{
-A \code{cuda_embedding}.
+A \code{cuda_embedding}; see \code{\link[=cuda_umap]{cuda_umap()}} for the stable result fields.
 }
 \description{
 t-SNE currently uses the CPU \code{Rtsne} backend.

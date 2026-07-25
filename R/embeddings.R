@@ -84,7 +84,12 @@
 }
 
 .new_embedding <- function(coordinates, method, backend, input, parameters,
-                           compute_device = "cpu") {
+                           compute_device = "cpu", compute_stages = NULL) {
+  if (is.null(compute_stages)) {
+    compute_stages <- list(
+      embedding = list(device = compute_device, backend = backend)
+    )
+  }
   if (!is.null(input$row_names)) {
     rownames(coordinates) <- input$row_names
   }
@@ -98,6 +103,7 @@
       method = method,
       backend = backend,
       compute_device = compute_device,
+      compute_stages = compute_stages,
       source_device = input$source_device,
       source_class = input$source_class,
       parameters = parameters
@@ -119,7 +125,9 @@
 #' @param n_epochs Optional training epochs.
 #' @param seed Optional random seed.
 #' @param ... Additional arguments passed to `uwot::umap()`.
-#' @return A `cuda_embedding`.
+#' @return A `cuda_embedding` list containing `coordinates`, `method`,
+#'   `backend`, `compute_device`, per-stage `compute_stages`, source metadata,
+#'   and algorithm `parameters`.
 #' @export
 #' @examples
 #' if (requireNamespace("uwot", quietly = TRUE)) {
@@ -189,7 +197,8 @@ cuda_umap <- function(x, n_components = 2L, n_neighbors = 15L,
 #' @inheritParams cuda_umap
 #' @param perplexity t-SNE perplexity.
 #' @param theta Barnes-Hut accuracy/speed trade-off.
-#' @return A `cuda_embedding`.
+#' @param ... Additional arguments passed to `Rtsne::Rtsne()`.
+#' @return A `cuda_embedding`; see [cuda_umap()] for the stable result fields.
 #' @export
 #' @examples
 #' if (requireNamespace("Rtsne", quietly = TRUE)) {
@@ -197,10 +206,6 @@ cuda_umap <- function(x, n_components = 2L, n_neighbors = 15L,
 #' }
 cuda_tsne <- function(x, n_components = 2L, perplexity = 30,
                       theta = 0.5, seed = NULL, ...) {
-  if (!requireNamespace("Rtsne", quietly = TRUE)) {
-    stop("Install the 'Rtsne' package to compute t-SNE embeddings.",
-         call. = FALSE)
-  }
   input <- .embedding_input(x)
   n_components <- .embedding_components(
     n_components,
@@ -215,6 +220,10 @@ cuda_tsne <- function(x, n_components = 2L, perplexity = 30,
   if (!is.numeric(theta) || length(theta) != 1L || is.na(theta) ||
       !is.finite(theta) || theta < 0 || theta > 1) {
     stop("`theta` must be between 0 and 1.", call. = FALSE)
+  }
+  if (!requireNamespace("Rtsne", quietly = TRUE)) {
+    stop("Install the 'Rtsne' package to compute t-SNE embeddings.",
+         call. = FALSE)
   }
   fit <- .with_embedding_seed(
     seed,
@@ -250,7 +259,9 @@ cuda_tsne <- function(x, n_components = 2L, perplexity = 30,
 #' @param diffusion_time Non-negative diffusion time exponent.
 #' @param metric Euclidean or cosine distance.
 #' @param device Device passed to [cudalearnr::cuda_distance()].
-#' @return A `cuda_embedding` with an additional `eigenvalues` element.
+#' @return A `cuda_embedding` with the stable fields documented by
+#'   [cuda_umap()], stage-level distance/kernel/eigendecomposition provenance,
+#'   and an additional `eigenvalues` element.
 #' @export
 #' @examples
 #' cuda_diffusion_map(
@@ -318,6 +329,12 @@ cuda_diffusion_map <- function(x, n_components = 2L, sigma = NULL,
   coordinates <- (
     vectors[, -1L, drop = FALSE] * inverse_root_degree
   ) * rep(retained_values^diffusion_time, each = nrow(vectors))
+  distance_device <- attr(distances, "device") %||% "cpu"
+  compute_device <- if (identical(distance_device, "cpu")) {
+    "cpu"
+  } else {
+    "hybrid"
+  }
   result <- .new_embedding(
     coordinates,
     method = "diffusion",
@@ -328,7 +345,15 @@ cuda_diffusion_map <- function(x, n_components = 2L, sigma = NULL,
       diffusion_time = diffusion_time,
       metric = metric
     ),
-    compute_device = attr(distances, "device") %||% "cpu"
+    compute_device = compute_device,
+    compute_stages = list(
+      distance = list(
+        device = distance_device,
+        backend = if (identical(distance_device, "cuda")) "torch" else "base"
+      ),
+      kernel = list(device = "cpu", backend = "base"),
+      eigendecomposition = list(device = "cpu", backend = backend)
+    )
   )
   result$eigenvalues <- retained_values
   result

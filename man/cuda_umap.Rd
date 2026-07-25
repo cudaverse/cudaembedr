@@ -33,7 +33,9 @@ cuda_umap(
 \item{...}{Additional arguments passed to \code{uwot::umap()}.}
 }
 \value{
-A \code{cuda_embedding}.
+A \code{cuda_embedding} list containing \code{coordinates}, \code{method},
+\code{backend}, \code{compute_device}, per-stage \code{compute_stages}, source metadata,
+and algorithm \code{parameters}.
 }
 \description{
 UMAP currently uses the CPU \code{uwot} backend. GPU-aware cudaverse inputs are

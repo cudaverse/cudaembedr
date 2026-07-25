@@ -28,7 +28,9 @@ pairwise distance.}
 \item{device}{Device passed to \code{\link[cudalearnr:cuda_distance]{cudalearnr::cuda_distance()}}.}
 }
 \value{
-A \code{cuda_embedding} with an additional \code{eigenvalues} element.
+A \code{cuda_embedding} with the stable fields documented by
+\code{\link[=cuda_umap]{cuda_umap()}}, stage-level distance/kernel/eigendecomposition provenance,
+and an additional \code{eigenvalues} element.
 }
 \description{
 Pairwise distances can use the \code{cudalearnr} CUDA path. Kernel construction

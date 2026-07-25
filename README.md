@@ -12,9 +12,11 @@ results.
 - diffusion map: CUDA-aware pairwise distances through `cudalearnr`, followed
   by CPU kernel construction and eigendecomposition.
 
-Each result reports `source_device`, `compute_device`, and `backend`. This keeps
-the public API ready for future device-resident implementations without
-misrepresenting the current execution path.
+Each result reports `source_device`, `compute_device`, and `backend`.
+Diffusion-map results also report `compute_stages`, separating distance,
+kernel, and eigendecomposition provenance. A CUDA distance followed by CPU
+kernel/eigendecomposition is therefore reported as `compute_device =
+"hybrid"`, never as an entirely GPU-native workflow.
 
 ## Installation
 
