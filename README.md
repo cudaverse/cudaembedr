@@ -25,6 +25,16 @@ kernel/eigendecomposition is therefore reported as `compute_device =
 pak::pak("cudaverse/cudaembedr")
 ```
 
+The diffusion-map implementation works with the base eigensolver and uses
+`RSpectra` automatically when installed. UMAP and t-SNE are optional adapters:
+
+```r
+pak::pak(c("uwot", "Rtsne", "RSpectra"))
+```
+
+Installing those packages does not make UMAP or t-SNE GPU-native; their
+current backends remain CPU implementations as listed above.
+
 ## Example
 
 ```r
@@ -37,6 +47,14 @@ embedding <- cuda_diffusion_map(pca, n_components = 2)
 embedding
 embedding_coordinates(embedding)
 ```
+
+See the cudaverse
+[end-to-end workflow](https://github.com/cudaverse/.github/blob/main/WORKFLOW.md)
+for a complete sparse-counts-to-embedding example.
+
+For installation, device verification, hybrid-stage interpretation, and common
+failures, see the cudaverse
+[GPU setup and troubleshooting guide](https://github.com/cudaverse/.github/blob/main/GPU_SETUP.md).
 
 ## License
 

@@ -1,6 +1,6 @@
 Package: cudaembedr
 Title: GPU-Aware Embeddings for R
-Version: 0.1.0
+Version: 0.1.1
 Authors@R:
     person("Yaoxiang", "Li", email = "liyaoxiang@outlook.com",
            role = c("aut", "cre"))
@@ -10,20 +10,21 @@ Description: Provides a common embedding interface for GPU-aware R workflows.
     single-cell workflow results. Every result records its actual compute
     backend and source device.
 License: MIT + file LICENSE
-URL: https://github.com/cudaverse/cudaembedr
+URL: https://cudaverse.github.io/cudaembedr/,
+    https://github.com/cudaverse/cudaembedr
 BugReports: https://github.com/cudaverse/cudaembedr/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 Imports:
-    cudalearnr,
+    cudalearnr (>= 0.1.1),
     stats
 Remotes:
     cudaverse/cudacellr,
     cudaverse/cudalearnr,
     cudaverse/cudatensr
 Suggests:
-    cudacellr,
-    cudatensr,
+    cudacellr (>= 0.1.1),
+    cudatensr (>= 0.1.1),
     RSpectra,
     Rtsne,
     testthat (>= 3.0.0),

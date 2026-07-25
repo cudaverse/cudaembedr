@@ -15,3 +15,11 @@ Numeric coordinate matrix.
 \description{
 Extract embedding coordinates
 }
+\examples{
+fit <- cuda_diffusion_map(
+  matrix(rnorm(60), 20, 3),
+  n_components = 2,
+  device = "cpu"
+)
+embedding_coordinates(fit)
+}

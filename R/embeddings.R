@@ -364,6 +364,13 @@ cuda_diffusion_map <- function(x, n_components = 2L, sigma = NULL,
 #' @param x A `cuda_embedding`.
 #' @return Numeric coordinate matrix.
 #' @export
+#' @examples
+#' fit <- cuda_diffusion_map(
+#'   matrix(rnorm(60), 20, 3),
+#'   n_components = 2,
+#'   device = "cpu"
+#' )
+#' embedding_coordinates(fit)
 embedding_coordinates <- function(x) {
   if (!inherits(x, "cuda_embedding")) {
     stop("`x` must be a cuda_embedding object.", call. = FALSE)

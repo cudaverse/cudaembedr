@@ -1,0 +1,14 @@
+url: https://cudaverse.github.io/cudaembedr/
+
+template:
+  bootstrap: 5
+
+reference:
+- title: Compute embeddings
+  contents:
+  - cuda_umap
+  - cuda_tsne
+  - cuda_diffusion_map
+- title: Extract coordinates
+  contents:
+  - embedding_coordinates
