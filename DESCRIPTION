@@ -1,6 +1,6 @@
 Package: cudaembedr
 Title: GPU-Aware Embeddings for R
-Version: 0.1.1
+Version: 0.1.2
 Authors@R:
     person("Yaoxiang", "Li", email = "liyaoxiang@outlook.com",
            role = c("aut", "cre"))
@@ -16,15 +16,15 @@ BugReports: https://github.com/cudaverse/cudaembedr/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 Imports:
-    cudalearnr (>= 0.1.1),
+    cudalearnr (>= 0.1.2),
     stats
 Remotes:
     cudaverse/cudacellr,
     cudaverse/cudalearnr,
     cudaverse/cudatensr
 Suggests:
-    cudacellr (>= 0.1.1),
-    cudatensr (>= 0.1.1),
+    cudacellr (>= 0.1.2),
+    cudatensr (>= 0.1.2),
     RSpectra,
     Rtsne,
     testthat (>= 3.0.0),

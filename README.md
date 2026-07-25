@@ -48,6 +48,10 @@ embedding
 embedding_coordinates(embedding)
 ```
 
+Embedding coordinate row names retain the input observation identifiers.
+This also holds when the input is a `cuda_pca` or `cudacell_workflow`, so cell
+names remain aligned from counts through the final low-dimensional result.
+
 See the cudaverse
 [end-to-end workflow](https://github.com/cudaverse/.github/blob/main/WORKFLOW.md)
 for a complete sparse-counts-to-embedding example.

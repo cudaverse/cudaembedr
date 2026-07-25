@@ -40,6 +40,31 @@ test_that("cuda_pca inputs compose with embeddings", {
   expect_identical(dim(fit$coordinates), c(40L, 2L))
 })
 
+test_that("single-cell workflow identifiers reach embedding coordinates", {
+  skip_if_not_installed("cudacellr")
+  set.seed(2)
+  counts <- matrix(rpois(30 * 20, lambda = 2), 30, 20)
+  rownames(counts) <- paste0("gene_", seq_len(nrow(counts)))
+  colnames(counts) <- paste0("cell_", seq_len(ncol(counts)))
+  workflow <- cudacellr::cudacell_workflow(
+    counts,
+    n_hvg = 10,
+    n_components = 3,
+    k = 4,
+    batch_size = 2,
+    device = "cpu"
+  )
+  fit <- cuda_diffusion_map(
+    workflow,
+    n_components = 2,
+    device = "cpu"
+  )
+
+  expect_identical(rownames(fit$coordinates), colnames(counts))
+  expect_identical(fit$source_class, "cudacell_workflow")
+  expect_identical(fit$source_device, "cpu")
+})
+
 test_that("t-SNE adapter returns a common result", {
   skip_if_not_installed("Rtsne")
   data <- embedding_data()
