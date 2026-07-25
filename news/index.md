@@ -1,5 +1,10 @@
 # Changelog
 
+## cudaembedr 0.1.2
+
+- Added an end-to-end single-cell workflow test proving that cell
+  identifiers remain attached to embedding coordinates.
+
 ## cudaembedr 0.1.1
 
 - Embedding results now expose stable per-stage `compute_stages`

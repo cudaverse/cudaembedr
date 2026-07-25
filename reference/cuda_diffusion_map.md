@@ -42,7 +42,7 @@ cuda_diffusion_map(
 - device:
 
   Device passed to
-  [`cudalearnr::cuda_distance()`](https://rdrr.io/pkg/cudalearnr/man/cuda_distance.html).
+  [`cudalearnr::cuda_distance()`](https://cudaverse.github.io/cudalearnr/reference/cuda_distance.html).
 
 ## Value
 
