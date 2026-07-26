@@ -18,6 +18,18 @@ kernel, and eigendecomposition provenance. A CUDA distance followed by
 CPU kernel/eigendecomposition is therefore reported as
 `compute_device = "hybrid"`, never as an entirely GPU-native workflow.
 
+| Method | Source provenance | Current compute provenance |
+|----|----|----|
+| UMAP | retained from the input | CPU through `uwot` |
+| t-SNE | retained from the input | CPU through `Rtsne` |
+| Diffusion map | retained from the input | distance on CPU or CUDA; kernel and eigendecomposition on CPU |
+
+The [backend and provenance
+article](https://cudaverse.github.io/cudaembedr/articles/backend-provenance.html)
+walks through source versus current stages, diffusion-map hybrid
+execution, quadratic memory requirements, and the optional CUDA hardware
+gate.
+
 ## Installation
 
 ``` r
@@ -80,8 +92,16 @@ MIT © Yaoxiang Li
 - [`cuda_diffusion_map()`](https://cudaverse.github.io/cudaembedr/reference/cuda_diffusion_map.md)
   : Diffusion-map-style embedding
 
-## Extract coordinates
+## Extract coordinates and inspect provenance
 
 - [`embedding_coordinates()`](https://cudaverse.github.io/cudaembedr/reference/embedding_coordinates.md)
   : Extract embedding coordinates
+- [`cuda_provenance()`](https://cudaverse.github.io/cudaembedr/reference/cuda_provenance.md)
+  : Inspect actual compute provenance
 
+# Articles
+
+### Guides
+
+- [Backend and
+  provenance](https://cudaverse.github.io/cudaembedr/articles/backend-provenance.md):

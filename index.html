@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">cudaembedr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,12 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
+<li><a class="dropdown-item" href="articles/backend-provenance.html">Backend and provenance</a></li>
+  </ul>
+</li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
@@ -59,6 +65,38 @@
 <li>diffusion map: CUDA-aware pairwise distances through <code>cudalearnr</code>, followed by CPU kernel construction and eigendecomposition.</li>
 </ul>
 <p>Each result reports <code>source_device</code>, <code>compute_device</code>, and <code>backend</code>. Diffusion-map results also report <code>compute_stages</code>, separating distance, kernel, and eigendecomposition provenance. A CUDA distance followed by CPU kernel/eigendecomposition is therefore reported as <code>compute_device = "hybrid"</code>, never as an entirely GPU-native workflow.</p>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr>
+<th>Method</th>
+<th>Source provenance</th>
+<th>Current compute provenance</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>UMAP</td>
+<td>retained from the input</td>
+<td>CPU through <code>uwot</code>
+</td>
+</tr>
+<tr>
+<td>t-SNE</td>
+<td>retained from the input</td>
+<td>CPU through <code>Rtsne</code>
+</td>
+</tr>
+<tr>
+<td>Diffusion map</td>
+<td>retained from the input</td>
+<td>distance on CPU or CUDA; kernel and eigendecomposition on CPU</td>
+</tr>
+</tbody>
+</table>
+<p>The <a href="https://cudaverse.github.io/cudaembedr/articles/backend-provenance.html">backend and provenance article</a> walks through source versus current stages, diffusion-map hybrid execution, quadratic memory requirements, and the optional CUDA hardware gate.</p>
 </div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>

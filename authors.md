@@ -10,12 +10,12 @@ Source:
 [`DESCRIPTION`](https://github.com/cudaverse/cudaembedr/blob/main/DESCRIPTION)
 
 Li Y (2026). *cudaembedr: GPU-Aware Embeddings for R*. R package version
-0.1.2, <https://cudaverse.github.io/cudaembedr/>.
+0.2.0, <https://cudaverse.github.io/cudaembedr/>.
 
     @Manual{,
       title = {cudaembedr: GPU-Aware Embeddings for R},
       author = {Yaoxiang Li},
       year = {2026},
-      note = {R package version 0.1.2},
+      note = {R package version 0.2.0},
       url = {https://cudaverse.github.io/cudaembedr/},
     }
