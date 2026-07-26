@@ -12,7 +12,274 @@
   cudatensr::cuda_provenance(x)
 }
 
-.embedding_input <- function(x) {
+.embedding_name <- function(x, argument) {
+  if (!is.character(x) || length(x) != 1L || is.na(x) || !nzchar(x)) {
+    stop(
+      sprintf("`%s` must be one non-empty character string.", argument),
+      call. = FALSE
+    )
+  }
+  x
+}
+
+.embedding_sce_recorded_dim <- function(record) {
+  if (!is.list(record)) {
+    return(NULL)
+  }
+  recorded <- record[["reduced_dim"]]
+  if (is.null(recorded) && is.list(record[["outputs"]])) {
+    recorded <- record[["outputs"]][["reduced_dim"]]
+  }
+  recorded
+}
+
+.embedding_sce_record <- function(x, reduced_dim = NULL) {
+  if (!requireNamespace("SingleCellExperiment", quietly = TRUE) ||
+      !requireNamespace("S4Vectors", quietly = TRUE)) {
+    stop(
+      paste0(
+        "Install the 'SingleCellExperiment' package with ",
+        "`BiocManager::install(\"SingleCellExperiment\")` to use ",
+        "SingleCellExperiment inputs."
+      ),
+      call. = FALSE
+    )
+  }
+  record <- S4Vectors::metadata(x)[["cudacellr"]]
+  if (!is.null(record) && !is.null(reduced_dim) &&
+      !identical(.embedding_sce_recorded_dim(record), reduced_dim)) {
+    return(NULL)
+  }
+  if (!is.null(record) && !is.list(record)) {
+    stop(
+      "`metadata(x)$cudacellr` must be a list when present.",
+      call. = FALSE
+    )
+  }
+  if (!is.null(record) &&
+      !identical(record[["schema"]], "cudacellr-sce/1")) {
+    stop(
+      paste0(
+        "`metadata(x)$cudacellr` does not follow the supported ",
+        "`cudacellr-sce/1` schema."
+      ),
+      call. = FALSE
+    )
+  }
+  if (!is.null(record)) {
+    .embedding_name(
+      .embedding_sce_recorded_dim(record),
+      "metadata(x)$cudacellr$reduced_dim"
+    )
+  }
+  record
+}
+
+.embedding_sce_reduced_dim <- function(x, reduced_dim, record) {
+  available <- SingleCellExperiment::reducedDimNames(x)
+  available <- as.character(available)
+  choose_available <- function(value, source) {
+    value <- .embedding_name(value, source)
+    matches <- which(available == value)
+    if (length(matches) == 1L) {
+      return(value)
+    }
+    if (length(matches) > 1L) {
+      stop(
+        sprintf(
+          "Reduced dimension %s is ambiguous because it occurs more than once.",
+          sQuote(value)
+        ),
+        call. = FALSE
+      )
+    }
+    choices <- if (length(available)) {
+      paste(sQuote(available), collapse = ", ")
+    } else {
+      "<none>"
+    }
+    stop(
+      sprintf(
+        "Reduced dimension %s is not present in `x`; available values: %s.",
+        sQuote(value),
+        choices
+      ),
+      call. = FALSE
+    )
+  }
+
+  if (!is.null(reduced_dim)) {
+    return(choose_available(reduced_dim, "reduced_dim"))
+  }
+
+  recorded <- .embedding_sce_recorded_dim(record)
+  if (!is.null(recorded)) {
+    return(choose_available(
+      recorded,
+      "metadata(x)$cudacellr$reduced_dim"
+    ))
+  }
+
+  pca_matches <- which(available == "PCA")
+  if (length(pca_matches) == 1L) {
+    return("PCA")
+  }
+  if (length(pca_matches) > 1L) {
+    stop(
+      "Reduced dimension \"PCA\" is ambiguous because it occurs more than once.",
+      call. = FALSE
+    )
+  }
+  if (!length(available)) {
+    stop(
+      paste0(
+        "`x` has no reduced dimensions. Add one with `reducedDim()` or ",
+        "supply a cudacellr result."
+      ),
+      call. = FALSE
+    )
+  }
+  stop(
+    paste0(
+      "`reduced_dim` is required because cudacellr metadata and a standard ",
+      "\"PCA\" reduced dimension are both absent. Available values: ",
+      paste(sQuote(available), collapse = ", "),
+      "."
+    ),
+    call. = FALSE
+  )
+}
+
+.embedding_sce_provenance <- function(record) {
+  if (is.null(record) || is.null(record[["compute_stages"]])) {
+    return(NULL)
+  }
+  proxy <- list(
+    provenance_schema = record[["provenance_schema"]],
+    compute_device = record[["compute_device"]],
+    compute_stages = record[["compute_stages"]]
+  )
+  cudatensr::cuda_provenance(proxy)
+}
+
+.embedding_sce_source_device <- function(record, provenance,
+                                         source_compute_device) {
+  candidate <- NULL
+  if (!is.null(record)) {
+    candidate <- record[["source_device"]]
+    if (is.null(candidate)) {
+      candidate <- record[["pca_device"]]
+    }
+  }
+  if (!is.null(candidate)) {
+    candidate <- .embedding_name(
+      candidate,
+      "metadata(x)$cudacellr$source_device"
+    )
+    if (!candidate %in% c("cpu", "cuda", "unknown")) {
+      stop(
+        paste0(
+          "`metadata(x)$cudacellr$source_device` must be ",
+          "\"cpu\", \"cuda\", or \"unknown\"."
+        ),
+        call. = FALSE
+      )
+    }
+    return(candidate)
+  }
+  if (!is.null(provenance)) {
+    pca_stage <- grep(
+      "^pca_.*(preprocessing|decomposition)$",
+      provenance$stage
+    )
+    if (length(pca_stage)) {
+      return(provenance$device[[utils::tail(pca_stage, 1L)]])
+    }
+  }
+  if (source_compute_device %in% c("cpu", "cuda")) {
+    return(source_compute_device)
+  }
+  "unknown"
+}
+
+.embedding_sce_input <- function(x, reduced_dim) {
+  record <- .embedding_sce_record(x, reduced_dim = reduced_dim)
+  selected <- .embedding_sce_reduced_dim(x, reduced_dim, record)
+  values <- as.matrix(SingleCellExperiment::reducedDim(x, selected))
+  if (nrow(values) != ncol(x)) {
+    stop(
+      sprintf(
+        "Reduced dimension %s must contain one row per cell.",
+        sQuote(selected)
+      ),
+      call. = FALSE
+    )
+  }
+  cell_names <- colnames(x)
+  if (!is.null(cell_names)) {
+    rownames(values) <- cell_names
+  }
+
+  source_provenance <- .embedding_sce_provenance(record)
+  source_compute_device <- if (!is.null(source_provenance)) {
+    attr(source_provenance, "compute_device", exact = TRUE)
+  } else if (!is.null(record) && !is.null(record[["compute_device"]])) {
+    compute_device <- .embedding_name(
+      record[["compute_device"]],
+      "metadata(x)$cudacellr$compute_device"
+    )
+    if (!compute_device %in% c("cpu", "cuda", "hybrid")) {
+      stop(
+        paste0(
+          "`metadata(x)$cudacellr$compute_device` must be ",
+          "\"cpu\", \"cuda\", or \"hybrid\"."
+        ),
+        call. = FALSE
+      )
+    }
+    compute_device
+  } else {
+    "unknown"
+  }
+  source_device <- .embedding_sce_source_device(
+    record,
+    source_provenance,
+    source_compute_device
+  )
+
+  list(
+    matrix = unname(values),
+    row_names = rownames(values),
+    source_device = source_device,
+    source_compute_device = source_compute_device,
+    source_class = class(x)[[1L]],
+    source_provenance = source_provenance,
+    reduced_dim = selected
+  )
+}
+
+.embedding_input <- function(x, reduced_dim = NULL) {
+  if (inherits(x, "SingleCellExperiment")) {
+    input <- .embedding_sce_input(x, reduced_dim)
+    if (!is.matrix(input$matrix) || !is.numeric(input$matrix) ||
+        nrow(input$matrix) < 3L || ncol(input$matrix) < 1L ||
+        anyNA(input$matrix) || any(!is.finite(input$matrix))) {
+      stop(
+        paste0(
+          "The selected reduced dimension must be a finite numeric matrix ",
+          "with at least three rows."
+        ),
+        call. = FALSE
+      )
+    }
+    return(input)
+  }
+  if (!is.null(reduced_dim)) {
+    stop(
+      "`reduced_dim` is only supported for SingleCellExperiment inputs.",
+      call. = FALSE
+    )
+  }
   source_device <- "cpu"
   source_compute_device <- "cpu"
   source_class <- class(x)[[1L]]
@@ -58,7 +325,8 @@
     source_device = source_device,
     source_compute_device = source_compute_device,
     source_class = source_class,
-    source_provenance = source_provenance
+    source_provenance = source_provenance,
+    reduced_dim = NULL
   )
 }
 
@@ -186,7 +454,8 @@ cuda_provenance <- function(x) {
 #' UMAP currently uses the CPU `uwot` backend. GPU-aware cudaverse inputs are
 #' accepted and their source device is retained in the result metadata.
 #'
-#' @param x Numeric observation-by-feature matrix or compatible cudaverse result.
+#' @param x Numeric observation-by-feature matrix, compatible cudaverse result,
+#'   or a `SingleCellExperiment` with a reduced dimension.
 #' @param n_components Output dimensions.
 #' @param n_neighbors Number of nearest neighbours.
 #' @param min_dist Minimum UMAP distance.
@@ -194,6 +463,9 @@ cuda_provenance <- function(x) {
 #' @param n_epochs Optional training epochs.
 #' @param seed Optional random seed.
 #' @param ... Additional arguments passed to `uwot::umap()`.
+#' @param reduced_dim For a `SingleCellExperiment`, the reduced-dimension name
+#'   to embed. When `NULL`, a cudacellr metadata choice is used first, followed
+#'   by a uniquely named `"PCA"`. Other names must be selected explicitly.
 #' @return A `cuda_embedding` list containing `coordinates`, `method`,
 #'   `backend`, `compute_device`, per-stage `compute_stages`, source metadata,
 #'   and algorithm `parameters`.
@@ -204,12 +476,13 @@ cuda_provenance <- function(x) {
 #' }
 cuda_umap <- function(x, n_components = 2L, n_neighbors = 15L,
                       min_dist = 0.1, metric = "euclidean",
-                      n_epochs = NULL, seed = NULL, ...) {
+                      n_epochs = NULL, seed = NULL, ...,
+                      reduced_dim = NULL) {
   if (!requireNamespace("uwot", quietly = TRUE)) {
     stop("Install the 'uwot' package to compute UMAP embeddings.",
          call. = FALSE)
   }
-  input <- .embedding_input(x)
+  input <- .embedding_input(x, reduced_dim = reduced_dim)
   n_components <- .embedding_components(
     n_components,
     max(1L, nrow(input$matrix) - 2L)
@@ -251,13 +524,20 @@ cuda_umap <- function(x, n_components = 2L, n_neighbors = 15L,
     method = "umap",
     backend = "uwot",
     input = input,
-    parameters = list(
-      n_components = n_components,
-      n_neighbors = as.integer(n_neighbors),
-      min_dist = min_dist,
-      metric = metric,
-      n_epochs = n_epochs,
-      seed = .embedding_seed(seed)
+    parameters = c(
+      list(
+        n_components = n_components,
+        n_neighbors = as.integer(n_neighbors),
+        min_dist = min_dist,
+        metric = metric,
+        n_epochs = n_epochs,
+        seed = .embedding_seed(seed)
+      ),
+      if (is.null(input$reduced_dim)) {
+        list()
+      } else {
+        list(reduced_dim = input$reduced_dim)
+      }
     )
   )
 }
@@ -277,8 +557,9 @@ cuda_umap <- function(x, n_components = 2L, n_neighbors = 15L,
 #'   cuda_tsne(matrix(rnorm(120), 40, 3), perplexity = 5, seed = 1)
 #' }
 cuda_tsne <- function(x, n_components = 2L, perplexity = 30,
-                      theta = 0.5, seed = NULL, ...) {
-  input <- .embedding_input(x)
+                      theta = 0.5, seed = NULL, ...,
+                      reduced_dim = NULL) {
+  input <- .embedding_input(x, reduced_dim = reduced_dim)
   n_components <- .embedding_components(
     n_components,
     min(3L, nrow(input$matrix) - 2L)
@@ -315,11 +596,18 @@ cuda_tsne <- function(x, n_components = 2L, perplexity = 30,
     method = "tsne",
     backend = "Rtsne",
     input = input,
-    parameters = list(
-      n_components = n_components,
-      perplexity = perplexity,
-      theta = theta,
-      seed = .embedding_seed(seed)
+    parameters = c(
+      list(
+        n_components = n_components,
+        perplexity = perplexity,
+        theta = theta,
+        seed = .embedding_seed(seed)
+      ),
+      if (is.null(input$reduced_dim)) {
+        list()
+      } else {
+        list(reduced_dim = input$reduced_dim)
+      }
     )
   )
 }
@@ -329,13 +617,16 @@ cuda_tsne <- function(x, n_components = 2L, perplexity = 30,
 #' Pairwise distances can use the `cudalearnr` CUDA path. Kernel construction
 #' and eigendecomposition currently run on the CPU.
 #'
-#' @param x Numeric observation-by-feature matrix or compatible cudaverse result.
+#' @param x Numeric observation-by-feature matrix, compatible cudaverse result,
+#'   or a `SingleCellExperiment` with a reduced dimension.
 #' @param n_components Output dimensions.
 #' @param sigma Gaussian kernel bandwidth. Defaults to the median positive
 #'   pairwise distance.
 #' @param diffusion_time Non-negative diffusion time exponent.
 #' @param metric Euclidean or cosine distance.
 #' @param device Device passed to [cudalearnr::cuda_distance()].
+#' @param reduced_dim For a `SingleCellExperiment`, the reduced-dimension name
+#'   to embed. See [cuda_umap()] for automatic selection.
 #' @return A `cuda_embedding` with the stable fields documented by
 #'   [cuda_umap()], stage-level distance/kernel/eigendecomposition provenance,
 #'   and an additional `eigenvalues` element.
@@ -349,9 +640,10 @@ cuda_tsne <- function(x, n_components = 2L, perplexity = 30,
 cuda_diffusion_map <- function(x, n_components = 2L, sigma = NULL,
                                diffusion_time = 1,
                                metric = c("euclidean", "cosine"),
-                               device = c("auto", "cuda", "cpu")) {
+                               device = c("auto", "cuda", "cpu"),
+                               reduced_dim = NULL) {
   requested_device <- match.arg(device)
-  input <- .embedding_input(x)
+  input <- .embedding_input(x, reduced_dim = reduced_dim)
   n_components <- .embedding_components(
     n_components,
     nrow(input$matrix) - 2L
@@ -418,12 +710,19 @@ cuda_diffusion_map <- function(x, n_components = 2L, sigma = NULL,
     method = "diffusion",
     backend = backend,
     input = input,
-    parameters = list(
-      n_components = n_components,
-      sigma = sigma,
-      diffusion_time = diffusion_time,
-      metric = metric,
-      requested_device = requested_device
+    parameters = c(
+      list(
+        n_components = n_components,
+        sigma = sigma,
+        diffusion_time = diffusion_time,
+        metric = metric,
+        requested_device = requested_device
+      ),
+      if (is.null(input$reduced_dim)) {
+        list()
+      } else {
+        list(reduced_dim = input$reduced_dim)
+      }
     ),
     compute_device = compute_device,
     compute_stages = list(

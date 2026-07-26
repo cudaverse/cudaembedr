@@ -1,13 +1,14 @@
 Package: cudaembedr
 Title: GPU-Aware Embeddings for R
-Version: 0.2.0
+Version: 0.3.0
 Authors@R:
     person("Yaoxiang", "Li", email = "liyaoxiang@outlook.com",
            role = c("aut", "cre"))
 Description: Provides a common embedding interface for GPU-aware R workflows.
     Includes UMAP and t-SNE adapters, a diffusion-map-style embedding with
     optional CUDA distance computation, and adapters for cudaverse PCA and
-    single-cell workflow results. Every result records its actual compute
+    single-cell workflow results, including reduced dimensions stored in
+    'SingleCellExperiment' objects. Every result records its actual compute
     backend and source device.
 License: MIT + file LICENSE
 URL: https://cudaverse.github.io/cudaembedr/,
@@ -24,11 +25,13 @@ Remotes:
     cudaverse/cudalearnr,
     cudaverse/cudatensr
 Suggests:
-    cudacellr (>= 0.2.0),
+    cudacellr (>= 0.3.0),
     knitr,
     rmarkdown,
     RSpectra,
     Rtsne,
+    S4Vectors,
+    SingleCellExperiment,
     testthat (>= 3.0.0),
     uwot
 VignetteBuilder: knitr

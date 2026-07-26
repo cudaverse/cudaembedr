@@ -4,10 +4,19 @@
 \alias{cuda_tsne}
 \title{t-SNE embedding}
 \usage{
-cuda_tsne(x, n_components = 2L, perplexity = 30, theta = 0.5, seed = NULL, ...)
+cuda_tsne(
+  x,
+  n_components = 2L,
+  perplexity = 30,
+  theta = 0.5,
+  seed = NULL,
+  ...,
+  reduced_dim = NULL
+)
 }
 \arguments{
-\item{x}{Numeric observation-by-feature matrix or compatible cudaverse result.}
+\item{x}{Numeric observation-by-feature matrix, compatible cudaverse result,
+or a \code{SingleCellExperiment} with a reduced dimension.}
 
 \item{n_components}{Output dimensions.}
 
@@ -18,6 +27,10 @@ cuda_tsne(x, n_components = 2L, perplexity = 30, theta = 0.5, seed = NULL, ...)
 \item{seed}{Optional random seed.}
 
 \item{...}{Additional arguments passed to \code{Rtsne::Rtsne()}.}
+
+\item{reduced_dim}{For a \code{SingleCellExperiment}, the reduced-dimension name
+to embed. When \code{NULL}, a cudacellr metadata choice is used first, followed
+by a uniquely named \code{"PCA"}. Other names must be selected explicitly.}
 }
 \value{
 A \code{cuda_embedding}; see \code{\link[=cuda_umap]{cuda_umap()}} for the stable result fields.

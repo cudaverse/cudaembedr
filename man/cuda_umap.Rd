@@ -12,11 +12,13 @@ cuda_umap(
   metric = "euclidean",
   n_epochs = NULL,
   seed = NULL,
-  ...
+  ...,
+  reduced_dim = NULL
 )
 }
 \arguments{
-\item{x}{Numeric observation-by-feature matrix or compatible cudaverse result.}
+\item{x}{Numeric observation-by-feature matrix, compatible cudaverse result,
+or a \code{SingleCellExperiment} with a reduced dimension.}
 
 \item{n_components}{Output dimensions.}
 
@@ -31,6 +33,10 @@ cuda_umap(
 \item{seed}{Optional random seed.}
 
 \item{...}{Additional arguments passed to \code{uwot::umap()}.}
+
+\item{reduced_dim}{For a \code{SingleCellExperiment}, the reduced-dimension name
+to embed. When \code{NULL}, a cudacellr metadata choice is used first, followed
+by a uniquely named \code{"PCA"}. Other names must be selected explicitly.}
 }
 \value{
 A \code{cuda_embedding} list containing \code{coordinates}, \code{method},

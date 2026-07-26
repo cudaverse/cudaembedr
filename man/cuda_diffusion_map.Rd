@@ -10,11 +10,13 @@ cuda_diffusion_map(
   sigma = NULL,
   diffusion_time = 1,
   metric = c("euclidean", "cosine"),
-  device = c("auto", "cuda", "cpu")
+  device = c("auto", "cuda", "cpu"),
+  reduced_dim = NULL
 )
 }
 \arguments{
-\item{x}{Numeric observation-by-feature matrix or compatible cudaverse result.}
+\item{x}{Numeric observation-by-feature matrix, compatible cudaverse result,
+or a \code{SingleCellExperiment} with a reduced dimension.}
 
 \item{n_components}{Output dimensions.}
 
@@ -26,6 +28,9 @@ pairwise distance.}
 \item{metric}{Euclidean or cosine distance.}
 
 \item{device}{Device passed to \code{\link[cudalearnr:cuda_distance]{cudalearnr::cuda_distance()}}.}
+
+\item{reduced_dim}{For a \code{SingleCellExperiment}, the reduced-dimension name
+to embed. See \code{\link[=cuda_umap]{cuda_umap()}} for automatic selection.}
 }
 \value{
 A \code{cuda_embedding} with the stable fields documented by
