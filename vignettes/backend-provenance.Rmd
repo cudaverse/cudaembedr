@@ -1,0 +1,154 @@
+---
+title: "Backend and provenance"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Backend and provenance}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+`cudaembedr` keeps upstream work separate from the work performed by the
+current embedding:
+
+- **source provenance** describes the input object, such as the stages used to
+  compute a PCA result;
+- **current compute provenance** describes the embedding stages returned by
+  `cuda_provenance()`.
+
+This distinction prevents a CUDA source from being mistaken for an
+end-to-end CUDA embedding.
+
+## A runnable CPU diffusion map
+
+This example computes PCA and the diffusion map on the CPU. Row names are
+preserved through both results.
+
+```{r cpu-diffusion}
+library(cudaembedr)
+
+set.seed(1)
+observations <- matrix(rnorm(40 * 5), 40, 5)
+rownames(observations) <- paste0("observation_", seq_len(nrow(observations)))
+
+pca <- cudalearnr::cuda_pca(
+  observations,
+  n_components = 3,
+  device = "cpu"
+)
+embedding <- cuda_diffusion_map(
+  pca,
+  n_components = 2,
+  device = "cpu"
+)
+
+embedding
+head(embedding_coordinates(embedding))
+embedding$source_device
+embedding$source_compute_device
+embedding$source_provenance
+cuda_provenance(embedding)
+```
+
+`embedding$source_provenance` contains the upstream PCA stages.
+`cuda_provenance(embedding)` contains only the current distance, kernel, and
+eigendecomposition stages. With `device = "cpu"`, all three current stages use
+the CPU and `embedding$compute_device` is `"cpu"`.
+
+UMAP and t-SNE use fixed CPU backends (`uwot` and `Rtsne`, respectively).
+Their source metadata can still describe an upstream CUDA result, but their
+current embedding stage remains CPU.
+
+## Why a CUDA diffusion map is hybrid
+
+`device` in `cuda_diffusion_map()` controls the pairwise-distance stage.
+Kernel construction and eigendecomposition are currently fixed to the CPU.
+The truthful stage summary is therefore:
+
+| Distance stage | Kernel stage | Eigendecomposition stage | `compute_device` |
+|---|---|---|---|
+| CPU | CPU | CPU | `"cpu"` |
+| CUDA | CPU | CPU | `"hybrid"` |
+
+The result's top-level `backend` names the eigendecomposition backend
+(`base-eigen` or `RSpectra`). Use `cuda_provenance()` when the backend and
+device of every stage matter.
+
+## Quadratic memory is still the limiting factor
+
+Diffusion maps currently materialize a complete pairwise-distance matrix,
+followed by dense kernel and normalized matrices. One double-precision
+`n`-by-`n` matrix alone requires approximately `8 * n^2` bytes:
+
+```{r memory-estimate}
+one_dense_matrix_gib <- function(n) {
+  8 * as.double(n)^2 / 1024^3
+}
+
+data.frame(
+  observations = c(1e3, 1e4, 5e4),
+  one_dense_matrix_GiB = round(
+    one_dense_matrix_gib(c(1e3, 1e4, 5e4)),
+    2
+  )
+)
+```
+
+Peak memory is several times this single-matrix estimate because multiple
+dense intermediates coexist. CUDA can accelerate distance computation, but it
+does not remove the `O(n^2)` host-memory requirement of the current
+implementation. Estimate memory before running large data and prefer methods
+that do not materialize all pairwise distances when `n` is large.
+
+## Optional CUDA execution and the hardware gate
+
+The next block runs only when a usable CUDA backend exists. It requests CUDA
+explicitly and verifies the hybrid contract: CUDA distance, CPU kernel, and CPU
+eigendecomposition.
+
+The cudaverse NVIDIA workflow sets `CUDAVERSE_REQUIRE_CUDA=true`. Under that
+gate, an unavailable CUDA runtime is an error rather than an allowed skip.
+
+```{r optional-cuda}
+require_cuda <- identical(
+  tolower(Sys.getenv("CUDAVERSE_REQUIRE_CUDA", "false")),
+  "true"
+)
+cuda_ready <- cudatensr::cuda_available()
+
+if (require_cuda && !cuda_ready) {
+  stop("The hardware gate requires a usable CUDA backend.")
+}
+
+if (cuda_ready) {
+  embedding_cuda <- cuda_diffusion_map(
+    observations,
+    n_components = 2,
+    device = "cuda"
+  )
+  provenance_cuda <- cuda_provenance(embedding_cuda)
+  stage_devices <- stats::setNames(
+    provenance_cuda$device,
+    provenance_cuda$stage
+  )
+
+  stopifnot(
+    identical(embedding_cuda$compute_device, "hybrid"),
+    identical(unname(stage_devices["distance"]), "cuda"),
+    identical(unname(stage_devices["kernel"]), "cpu"),
+    identical(unname(stage_devices["eigendecomposition"]), "cpu")
+  )
+
+  provenance_cuda
+}
+```
+
+Use `device = "cuda"` when CUDA is mandatory. Use `device = "auto"` only when
+the recorded CPU fallback is acceptable. In either case,
+`cuda_provenance()` is the authoritative record of what actually ran.

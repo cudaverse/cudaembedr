@@ -1,14 +1,46 @@
+.embedding_has_compute_stages <- function(x) {
+  if (is.list(x) && "compute_stages" %in% names(x)) {
+    return(TRUE)
+  }
+  !is.null(attr(x, "compute_stages", exact = TRUE))
+}
+
+.embedding_source_provenance <- function(x) {
+  if (!.embedding_has_compute_stages(x)) {
+    return(NULL)
+  }
+  cudatensr::cuda_provenance(x)
+}
+
 .embedding_input <- function(x) {
   source_device <- "cpu"
+  source_compute_device <- "cpu"
   source_class <- class(x)[[1L]]
+  source_provenance <- .embedding_source_provenance(x)
+  if (!is.null(source_provenance)) {
+    source_compute_device <- attr(
+      source_provenance,
+      "compute_device",
+      exact = TRUE
+    )
+  }
   if (inherits(x, "cudacell_workflow")) {
     source_device <- x$pca$device %||% "unknown"
+    if (is.null(source_provenance)) {
+      source_compute_device <- x$compute_device %||% source_device
+    }
     x <- x$pca$x
   } else if (inherits(x, "cuda_pca")) {
     source_device <- x$device %||% "unknown"
+    if (is.null(source_provenance)) {
+      source_compute_device <- x$compute_device %||% source_device
+    }
     x <- x$x
   } else if (inherits(x, "cudatensor")) {
     source_device <- x$device %||% "unknown"
+    if (is.null(source_provenance)) {
+      source_compute_device <- x$compute_device %||% source_device
+    }
     x <- as.array(x)
   } else if (is.data.frame(x)) {
     x <- as.matrix(x)
@@ -24,7 +56,9 @@
     matrix = unname(x),
     row_names = rownames(x),
     source_device = source_device,
-    source_class = source_class
+    source_compute_device = source_compute_device,
+    source_class = source_class,
+    source_provenance = source_provenance
   )
 }
 
@@ -87,9 +121,29 @@
                            compute_device = "cpu", compute_stages = NULL) {
   if (is.null(compute_stages)) {
     compute_stages <- list(
-      embedding = list(device = compute_device, backend = backend)
+      embedding = cudatensr::cuda_stage(
+        requested_device = "fixed-cpu",
+        device = "cpu",
+        backend = backend,
+        selection_reason = "algorithm_cpu_only",
+        fallback = FALSE,
+        output_device = "cpu"
+      )
     )
   }
+  provenance <- cudatensr::cuda_provenance(compute_stages)
+  actual_compute_device <- attr(
+    provenance,
+    "compute_device",
+    exact = TRUE
+  )
+  if (!identical(compute_device, actual_compute_device)) {
+    stop(
+      "`compute_device` does not match the recorded compute stages.",
+      call. = FALSE
+    )
+  }
+  compute_stages <- attr(provenance, "compute_stages", exact = TRUE)
   if (!is.null(input$row_names)) {
     rownames(coordinates) <- input$row_names
   }
@@ -104,12 +158,27 @@
       backend = backend,
       compute_device = compute_device,
       compute_stages = compute_stages,
+      provenance_schema = attr(provenance, "schema", exact = TRUE),
       source_device = input$source_device,
+      source_compute_device = input$source_compute_device,
       source_class = input$source_class,
+      source_provenance = input$source_provenance,
       parameters = parameters
     ),
     class = "cuda_embedding"
   )
+}
+
+#' Inspect actual compute provenance
+#'
+#' This is the shared [cudatensr::cuda_provenance()] inspector, re-exposed for
+#' embedding results.
+#'
+#' @param x A cudaverse result or named list of compute stages.
+#' @return A `cuda_provenance` data frame.
+#' @export
+cuda_provenance <- function(x) {
+  cudatensr::cuda_provenance(x)
 }
 
 #' UMAP embedding
@@ -183,9 +252,12 @@ cuda_umap <- function(x, n_components = 2L, n_neighbors = 15L,
     backend = "uwot",
     input = input,
     parameters = list(
+      n_components = n_components,
       n_neighbors = as.integer(n_neighbors),
       min_dist = min_dist,
-      metric = metric
+      metric = metric,
+      n_epochs = n_epochs,
+      seed = .embedding_seed(seed)
     )
   )
 }
@@ -243,7 +315,12 @@ cuda_tsne <- function(x, n_components = 2L, perplexity = 30,
     method = "tsne",
     backend = "Rtsne",
     input = input,
-    parameters = list(perplexity = perplexity, theta = theta)
+    parameters = list(
+      n_components = n_components,
+      perplexity = perplexity,
+      theta = theta,
+      seed = .embedding_seed(seed)
+    )
   )
 }
 
@@ -273,6 +350,7 @@ cuda_diffusion_map <- function(x, n_components = 2L, sigma = NULL,
                                diffusion_time = 1,
                                metric = c("euclidean", "cosine"),
                                device = c("auto", "cuda", "cpu")) {
+  requested_device <- match.arg(device)
   input <- .embedding_input(x)
   n_components <- .embedding_components(
     n_components,
@@ -288,7 +366,7 @@ cuda_diffusion_map <- function(x, n_components = 2L, sigma = NULL,
   distances <- cudalearnr::cuda_distance(
     input$matrix,
     metric = metric,
-    device = device
+    device = requested_device
   )
   positive <- distances[distances > 0 & is.finite(distances)]
   if (is.null(sigma)) {
@@ -341,18 +419,33 @@ cuda_diffusion_map <- function(x, n_components = 2L, sigma = NULL,
     backend = backend,
     input = input,
     parameters = list(
+      n_components = n_components,
       sigma = sigma,
       diffusion_time = diffusion_time,
-      metric = metric
+      metric = metric,
+      requested_device = requested_device
     ),
     compute_device = compute_device,
     compute_stages = list(
-      distance = list(
-        device = distance_device,
-        backend = if (identical(distance_device, "cuda")) "torch" else "base"
+      distance = attr(
+        cudalearnr::cuda_provenance(distances),
+        "compute_stages",
+        exact = TRUE
+      )$distance,
+      kernel = cudatensr::cuda_stage(
+        requested_device = "fixed-cpu",
+        device = "cpu",
+        backend = "base",
+        selection_reason = "algorithm_cpu_only",
+        output_device = "cpu"
       ),
-      kernel = list(device = "cpu", backend = "base"),
-      eigendecomposition = list(device = "cpu", backend = backend)
+      eigendecomposition = cudatensr::cuda_stage(
+        requested_device = "fixed-cpu",
+        device = "cpu",
+        backend = backend,
+        selection_reason = "algorithm_cpu_only",
+        output_device = "cpu"
+      )
     )
   )
   result$eigenvalues <- retained_values
