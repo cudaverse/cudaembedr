@@ -9,7 +9,7 @@ and eigendecomposition currently run on the CPU."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">cudaembedr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -52,7 +52,8 @@ and eigendecomposition currently run on the CPU.</p>
 <span>  sigma <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  diffusion_time <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  metric <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"euclidean"</span>, <span class="st">"cosine"</span><span class="op">)</span>,</span>
-<span>  device <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"auto"</span>, <span class="st">"cuda"</span>, <span class="st">"cpu"</span><span class="op">)</span></span>
+<span>  device <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"auto"</span>, <span class="st">"cuda"</span>, <span class="st">"cpu"</span><span class="op">)</span>,</span>
+<span>  reduced_dim <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -61,7 +62,8 @@ and eigendecomposition currently run on the CPU.</p>
 
 
 <dl><dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
-<dd><p>Numeric observation-by-feature matrix or compatible cudaverse result.</p></dd>
+<dd><p>Numeric observation-by-feature matrix, compatible cudaverse result,
+or a <code>SingleCellExperiment</code> with a reduced dimension.</p></dd>
 
 
 <dt id="arg-n-components">n_components<a class="anchor" aria-label="anchor" href="#arg-n-components"></a></dt>
@@ -83,6 +85,11 @@ pairwise distance.</p></dd>
 
 <dt id="arg-device">device<a class="anchor" aria-label="anchor" href="#arg-device"></a></dt>
 <dd><p>Device passed to <code><a href="https://cudaverse.github.io/cudalearnr/reference/cuda_distance.html" class="external-link">cudalearnr::cuda_distance()</a></code>.</p></dd>
+
+
+<dt id="arg-reduced-dim">reduced_dim<a class="anchor" aria-label="anchor" href="#arg-reduced-dim"></a></dt>
+<dd><p>For a <code>SingleCellExperiment</code>, the reduced-dimension name
+to embed. See <code><a href="cuda_umap.html">cuda_umap()</a></code> for automatic selection.</p></dd>
 
 </dl></div>
     <div class="section level2">

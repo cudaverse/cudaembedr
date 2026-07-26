@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">cudaembedr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -143,6 +143,53 @@ describe an upstream CUDA result, but their current embedding stage
 remains CPU.</p>
 </div>
 <div class="section level2">
+<h2 id="use-a-singlecellexperiment-reduced-dimension">Use a SingleCellExperiment reduced dimension<a class="anchor" aria-label="anchor" href="#use-a-singlecellexperiment-reduced-dimension"></a>
+</h2>
+<p><code>cudaembedr</code> can read a cell-by-component matrix directly
+from a <code>SingleCellExperiment</code>. The returned coordinate rows
+follow the SCE column names, so users do not need to extract a reduced
+dimension and restore cell identifiers manually.</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"SingleCellExperiment"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">sce</span> <span class="op">&lt;-</span> <span class="fu">SingleCellExperiment</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/SingleCellExperiment/man/SingleCellExperiment.html" class="external-link">SingleCellExperiment</a></span><span class="op">(</span></span>
+<span>    assays <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>counts <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/t.html" class="external-link">t</a></span><span class="op">(</span><span class="va">observations</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
+<span>  <span class="fu">SingleCellExperiment</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/SingleCellExperiment/man/reducedDims.html" class="external-link">reducedDim</a></span><span class="op">(</span><span class="va">sce</span>, <span class="st">"PCA"</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="va">pca</span><span class="op">$</span><span class="va">x</span></span>
+<span></span>
+<span>  <span class="va">sce_embedding</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cuda_diffusion_map.html">cuda_diffusion_map</a></span><span class="op">(</span></span>
+<span>    <span class="va">sce</span>,</span>
+<span>    reduced_dim <span class="op">=</span> <span class="st">"PCA"</span>,</span>
+<span>    n_components <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>    device <span class="op">=</span> <span class="st">"cpu"</span></span>
+<span>  <span class="op">)</span></span>
+<span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical</a></span><span class="op">(</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="fu"><a href="../reference/embedding_coordinates.html">embedding_coordinates</a></span><span class="op">(</span><span class="va">sce_embedding</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
+<p>When <code>reduced_dim = NULL</code>, selection is deterministic:</p>
+<ol style="list-style-type: decimal">
+<li>use <code>metadata(sce)$cudacellr$reduced_dim</code> when cudacellr
+recorded one;</li>
+<li>otherwise use a unique reduced dimension named
+<code>"PCA"</code>;</li>
+<li>otherwise require an explicit <code>reduced_dim</code>.</li>
+</ol>
+<p>Non-PCA choices are never guessed, even if only one exists. The error
+lists the available names. Explicit <code>reduced_dim</code> always
+wins. A valid cudacellr metadata record becomes
+<code>source_provenance</code> and <code>source_compute_device</code>
+only when the selected reduced dimension is the output named by that
+record, without being mixed into the current embedding stages. Selecting
+a different reduced dimension reports unknown source devices instead of
+borrowing unrelated lineage.</p>
+<p>When a generic SCE has no cudacellr provenance record, both
+source-device fields are <code>"unknown"</code>; the package does not
+infer how an existing reduced dimension was computed.</p>
+</div>
+<div class="section level2">
 <h2 id="why-a-cuda-diffusion-map-is-hybrid">Why a CUDA diffusion map is hybrid<a class="anchor" aria-label="anchor" href="#why-a-cuda-diffusion-map-is-hybrid"></a>
 </h2>
 <p><code>device</code> in <code><a href="../reference/cuda_diffusion_map.html">cuda_diffusion_map()</a></code> controls the
@@ -188,7 +235,7 @@ backend and device of every stage matter.</p>
 matrix, followed by dense kernel and normalized matrices. One
 double-precision <code>n</code>-by-<code>n</code> matrix alone requires
 approximately <code>8 * n^2</code> bytes:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">one_dense_matrix_gib</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">n</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fl">8</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/double.html" class="external-link">as.double</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span> <span class="op">/</span> <span class="fl">1024</span><span class="op">^</span><span class="fl">3</span></span>
 <span><span class="op">}</span></span>
@@ -220,7 +267,7 @@ distance, CPU kernel, and CPU eigendecomposition.</p>
 <p>The cudaverse NVIDIA workflow sets
 <code>CUDAVERSE_REQUIRE_CUDA=true</code>. Under that gate, an
 unavailable CUDA runtime is an error rather than an allowed skip.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">require_cuda</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/chartr.html" class="external-link">tolower</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv</a></span><span class="op">(</span><span class="st">"CUDAVERSE_REQUIRE_CUDA"</span>, <span class="st">"false"</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  <span class="st">"true"</span></span>

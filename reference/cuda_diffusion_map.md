@@ -12,7 +12,8 @@ cuda_diffusion_map(
   sigma = NULL,
   diffusion_time = 1,
   metric = c("euclidean", "cosine"),
-  device = c("auto", "cuda", "cpu")
+  device = c("auto", "cuda", "cpu"),
+  reduced_dim = NULL
 )
 ```
 
@@ -20,7 +21,8 @@ cuda_diffusion_map(
 
 - x:
 
-  Numeric observation-by-feature matrix or compatible cudaverse result.
+  Numeric observation-by-feature matrix, compatible cudaverse result, or
+  a `SingleCellExperiment` with a reduced dimension.
 
 - n_components:
 
@@ -43,6 +45,12 @@ cuda_diffusion_map(
 
   Device passed to
   [`cudalearnr::cuda_distance()`](https://cudaverse.github.io/cudalearnr/reference/cuda_distance.html).
+
+- reduced_dim:
+
+  For a `SingleCellExperiment`, the reduced-dimension name to embed. See
+  [`cuda_umap()`](https://cudaverse.github.io/cudaembedr/reference/cuda_umap.md)
+  for automatic selection.
 
 ## Value
 

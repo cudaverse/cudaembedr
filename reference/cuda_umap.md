@@ -14,7 +14,8 @@ cuda_umap(
   metric = "euclidean",
   n_epochs = NULL,
   seed = NULL,
-  ...
+  ...,
+  reduced_dim = NULL
 )
 ```
 
@@ -22,7 +23,8 @@ cuda_umap(
 
 - x:
 
-  Numeric observation-by-feature matrix or compatible cudaverse result.
+  Numeric observation-by-feature matrix, compatible cudaverse result, or
+  a `SingleCellExperiment` with a reduced dimension.
 
 - n_components:
 
@@ -53,6 +55,12 @@ cuda_umap(
 
   Additional arguments passed to
   [`uwot::umap()`](https://jlmelville.github.io/uwot/reference/umap.html).
+
+- reduced_dim:
+
+  For a `SingleCellExperiment`, the reduced-dimension name to embed.
+  When `NULL`, a cudacellr metadata choice is used first, followed by a
+  uniquely named `"PCA"`. Other names must be selected explicitly.
 
 ## Value
 

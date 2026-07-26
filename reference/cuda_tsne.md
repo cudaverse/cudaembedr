@@ -5,14 +5,23 @@ t-SNE currently uses the CPU `Rtsne` backend.
 ## Usage
 
 ``` r
-cuda_tsne(x, n_components = 2L, perplexity = 30, theta = 0.5, seed = NULL, ...)
+cuda_tsne(
+  x,
+  n_components = 2L,
+  perplexity = 30,
+  theta = 0.5,
+  seed = NULL,
+  ...,
+  reduced_dim = NULL
+)
 ```
 
 ## Arguments
 
 - x:
 
-  Numeric observation-by-feature matrix or compatible cudaverse result.
+  Numeric observation-by-feature matrix, compatible cudaverse result, or
+  a `SingleCellExperiment` with a reduced dimension.
 
 - n_components:
 
@@ -34,6 +43,12 @@ cuda_tsne(x, n_components = 2L, perplexity = 30, theta = 0.5, seed = NULL, ...)
 
   Additional arguments passed to
   [`Rtsne::Rtsne()`](https://rdrr.io/pkg/Rtsne/man/Rtsne.html).
+
+- reduced_dim:
+
+  For a `SingleCellExperiment`, the reduced-dimension name to embed.
+  When `NULL`, a cudacellr metadata choice is used first, followed by a
+  uniquely named `"PCA"`. Other names must be selected explicitly.
 
 ## Value
 

@@ -1,5 +1,20 @@
 # Changelog
 
+## cudaembedr 0.3.0
+
+- UMAP, t-SNE, and diffusion maps now accept `SingleCellExperiment`
+  inputs through a named reduced dimension. Automatic selection prefers
+  the cudacellr metadata record, then a standard `"PCA"` entry, and
+  never guesses a non-PCA choice.
+- Embeddings created from a `SingleCellExperiment` preserve cell
+  identifiers and retain cudacellr source provenance and aggregate
+  compute metadata when the selected reduced dimension is the recorded
+  cudacellr output. Unrelated reduced dimensions never borrow that
+  provenance.
+- A generic SCE without cudacellr provenance reports its source device
+  as `"unknown"` rather than guessing that its reduced dimension was
+  computed on the CPU.
+
 ## cudaembedr 0.2.0
 
 - Embedding stages now use the shared validated provenance schema,
