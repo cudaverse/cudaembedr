@@ -13,5 +13,6 @@
 
 - [`embedding_coordinates()`](https://cudaverse.github.io/cudaembedr/reference/embedding_coordinates.md)
   : Extract embedding coordinates
-- [`cuda_provenance()`](https://cudaverse.github.io/cudaembedr/reference/cuda_provenance.md)
-  : Inspect actual compute provenance
+- [`reexports`](https://cudaverse.github.io/cudaembedr/reference/reexports.md)
+  [`cuda_provenance`](https://cudaverse.github.io/cudaembedr/reference/reexports.md)
+  : Objects exported from other packages

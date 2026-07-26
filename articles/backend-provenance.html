@@ -73,7 +73,7 @@ performed by the current embedding:</p>
 as the stages used to compute a PCA result;</li>
 <li>
 <strong>current compute provenance</strong> describes the embedding
-stages returned by <code><a href="../reference/cuda_provenance.html">cuda_provenance()</a></code>.</li>
+stages returned by <code><a href="https://cudaverse.github.io/cudatensr/reference/cuda_provenance.html" class="external-link">cuda_provenance()</a></code>.</li>
 </ul>
 <p>This distinction prevents a CUDA source from being mistaken for an
 end-to-end CUDA embedding.</p>
@@ -104,12 +104,12 @@ are preserved through both results.</p>
 <span><span class="co">#&gt; &lt;cuda_embedding method=diffusion observations=40 dimensions=2 backend=base-eigen compute_device=cpu&gt;</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/embedding_coordinates.html">embedding_coordinates</a></span><span class="op">(</span><span class="va">embedding</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                 DIFFUSION1    DIFFUSION2</span></span>
-<span><span class="co">#&gt; observation_1 -0.001416858 -0.0009952801</span></span>
-<span><span class="co">#&gt; observation_2 -0.004355441 -0.0028505600</span></span>
-<span><span class="co">#&gt; observation_3  0.001478039 -0.0031071846</span></span>
-<span><span class="co">#&gt; observation_4 -0.007913494  0.0076251042</span></span>
-<span><span class="co">#&gt; observation_5  0.001198100 -0.0024159201</span></span>
-<span><span class="co">#&gt; observation_6 -0.010683413 -0.0053600315</span></span>
+<span><span class="co">#&gt; observation_1 -0.001415982 -0.0009953218</span></span>
+<span><span class="co">#&gt; observation_2 -0.004352911 -0.0028476722</span></span>
+<span><span class="co">#&gt; observation_3  0.001476729 -0.0031047330</span></span>
+<span><span class="co">#&gt; observation_4 -0.007907573  0.0076197401</span></span>
+<span><span class="co">#&gt; observation_5  0.001197056 -0.0024141746</span></span>
+<span><span class="co">#&gt; observation_6 -0.010676717 -0.0053555519</span></span>
 <span><span class="va">embedding</span><span class="op">$</span><span class="va">source_device</span></span>
 <span><span class="co">#&gt; [1] "cpu"</span></span>
 <span><span class="va">embedding</span><span class="op">$</span><span class="va">source_compute_device</span></span>
@@ -122,7 +122,7 @@ are preserved through both results.</p>
 <span><span class="co">#&gt;  output_device</span></span>
 <span><span class="co">#&gt;            cpu</span></span>
 <span><span class="co">#&gt;            cpu</span></span>
-<span><span class="fu"><a href="../reference/cuda_provenance.html">cuda_provenance</a></span><span class="op">(</span><span class="va">embedding</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://cudaverse.github.io/cudatensr/reference/cuda_provenance.html" class="external-link">cuda_provenance</a></span><span class="op">(</span><span class="va">embedding</span><span class="op">)</span></span>
 <span><span class="co">#&gt; &lt;cuda_provenance schema=cudaverse-stage/1 stages=3 compute=cpu&gt;</span></span>
 <span><span class="co">#&gt;               stage requested_device device    backend   selection_reason</span></span>
 <span><span class="co">#&gt;            distance              cpu    cpu       base       explicit_cpu</span></span>
@@ -225,7 +225,7 @@ currently fixed to the CPU. The truthful stage summary is therefore:</p>
 </table>
 <p>The result’s top-level <code>backend</code> names the
 eigendecomposition backend (<code>base-eigen</code> or
-<code>RSpectra</code>). Use <code><a href="../reference/cuda_provenance.html">cuda_provenance()</a></code> when the
+<code>RSpectra</code>). Use <code><a href="https://cudaverse.github.io/cudatensr/reference/cuda_provenance.html" class="external-link">cuda_provenance()</a></code> when the
 backend and device of every stage matter.</p>
 </div>
 <div class="section level2">
@@ -284,7 +284,7 @@ unavailable CUDA runtime is an error rather than an allowed skip.</p>
 <span>    n_components <span class="op">=</span> <span class="fl">2</span>,</span>
 <span>    device <span class="op">=</span> <span class="st">"cuda"</span></span>
 <span>  <span class="op">)</span></span>
-<span>  <span class="va">provenance_cuda</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cuda_provenance.html">cuda_provenance</a></span><span class="op">(</span><span class="va">embedding_cuda</span><span class="op">)</span></span>
+<span>  <span class="va">provenance_cuda</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://cudaverse.github.io/cudatensr/reference/cuda_provenance.html" class="external-link">cuda_provenance</a></span><span class="op">(</span><span class="va">embedding_cuda</span><span class="op">)</span></span>
 <span>  <span class="va">stage_devices</span> <span class="op">&lt;-</span> <span class="fu">stats</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/stats/setNames.html" class="external-link">setNames</a></span><span class="op">(</span></span>
 <span>    <span class="va">provenance_cuda</span><span class="op">$</span><span class="va">device</span>,</span>
 <span>    <span class="va">provenance_cuda</span><span class="op">$</span><span class="va">stage</span></span>
@@ -301,7 +301,7 @@ unavailable CUDA runtime is an error rather than an allowed skip.</p>
 <span><span class="op">}</span></span></code></pre></div>
 <p>Use <code>device = "cuda"</code> when CUDA is mandatory. Use
 <code>device = "auto"</code> only when the recorded CPU fallback is
-acceptable. In either case, <code><a href="../reference/cuda_provenance.html">cuda_provenance()</a></code> is the
+acceptable. In either case, <code><a href="https://cudaverse.github.io/cudatensr/reference/cuda_provenance.html" class="external-link">cuda_provenance()</a></code> is the
 authoritative record of what actually ran.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

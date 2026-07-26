@@ -7,7 +7,7 @@ current embedding:
   used to compute a PCA result;
 - **current compute provenance** describes the embedding stages returned
   by
-  [`cuda_provenance()`](https://cudaverse.github.io/cudaembedr/reference/cuda_provenance.md).
+  [`cuda_provenance()`](https://cudaverse.github.io/cudatensr/reference/cuda_provenance.html).
 
 This distinction prevents a CUDA source from being mistaken for an
 end-to-end CUDA embedding.
@@ -40,12 +40,12 @@ embedding
 #> <cuda_embedding method=diffusion observations=40 dimensions=2 backend=base-eigen compute_device=cpu>
 head(embedding_coordinates(embedding))
 #>                 DIFFUSION1    DIFFUSION2
-#> observation_1 -0.001416858 -0.0009952801
-#> observation_2 -0.004355441 -0.0028505600
-#> observation_3  0.001478039 -0.0031071846
-#> observation_4 -0.007913494  0.0076251042
-#> observation_5  0.001198100 -0.0024159201
-#> observation_6 -0.010683413 -0.0053600315
+#> observation_1 -0.001415982 -0.0009953218
+#> observation_2 -0.004352911 -0.0028476722
+#> observation_3  0.001476729 -0.0031047330
+#> observation_4 -0.007907573  0.0076197401
+#> observation_5  0.001197056 -0.0024141746
+#> observation_6 -0.010676717 -0.0053555519
 embedding$source_device
 #> [1] "cpu"
 embedding$source_compute_device
@@ -143,7 +143,7 @@ summary is therefore:
 
 The result’s top-level `backend` names the eigendecomposition backend
 (`base-eigen` or `RSpectra`). Use
-[`cuda_provenance()`](https://cudaverse.github.io/cudaembedr/reference/cuda_provenance.md)
+[`cuda_provenance()`](https://cudaverse.github.io/cudatensr/reference/cuda_provenance.html)
 when the backend and device of every stage matter.
 
 ## Quadratic memory is still the limiting factor
@@ -226,5 +226,5 @@ if (cuda_ready) {
 
 Use `device = "cuda"` when CUDA is mandatory. Use `device = "auto"` only
 when the recorded CPU fallback is acceptable. In either case,
-[`cuda_provenance()`](https://cudaverse.github.io/cudaembedr/reference/cuda_provenance.md)
+[`cuda_provenance()`](https://cudaverse.github.io/cudatensr/reference/cuda_provenance.html)
 is the authoritative record of what actually ran.

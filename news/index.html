@@ -38,7 +38,9 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.0" id="cudaembedr-030">cudaembedr 0.3.0<a class="anchor" aria-label="anchor" href="#cudaembedr-030"></a></h2>
-<ul><li>UMAP, t-SNE, and diffusion maps now accept <code>SingleCellExperiment</code> inputs through a named reduced dimension. Automatic selection prefers the cudacellr metadata record, then a standard <code>"PCA"</code> entry, and never guesses a non-PCA choice.</li>
+<ul><li>
+<code><a href="https://cudaverse.github.io/cudatensr/reference/cuda_provenance.html" class="external-link">cuda_provenance()</a></code> now re-exports the canonical cudatensr S3 generic instead of wrapping it, so methods registered by other cudaverse packages remain available regardless of package attachment order.</li>
+<li>UMAP, t-SNE, and diffusion maps now accept <code>SingleCellExperiment</code> inputs through a named reduced dimension. Automatic selection prefers the cudacellr metadata record, then a standard <code>"PCA"</code> entry, and never guesses a non-PCA choice.</li>
 <li>Embeddings created from a <code>SingleCellExperiment</code> preserve cell identifiers and retain cudacellr source provenance and aggregate compute metadata when the selected reduced dimension is the recorded cudacellr output. Unrelated reduced dimensions never borrow that provenance.</li>
 <li>A generic SCE without cudacellr provenance reports its source device as <code>"unknown"</code> rather than guessing that its reduced dimension was computed on the CPU.</li>
 </ul></div>
