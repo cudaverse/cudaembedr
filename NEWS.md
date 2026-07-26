@@ -1,5 +1,8 @@
 # cudaembedr 0.3.0
 
+- `cuda_provenance()` now re-exports the canonical cudatensr S3 generic
+  instead of wrapping it, so methods registered by other cudaverse packages
+  remain available regardless of package attachment order.
 - UMAP, t-SNE, and diffusion maps now accept `SingleCellExperiment` inputs
   through a named reduced dimension. Automatic selection prefers the
   cudacellr metadata record, then a standard `"PCA"` entry, and never guesses
