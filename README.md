@@ -1,5 +1,11 @@
 # cudaembedr
 
+> **Archived:** This package has been incorporated into
+> [`cudaverse`](https://github.com/cudaverse/cudaverse). Install and load
+> `cudaverse`, then continue using the same embedding functions. This
+> repository remains available as development history and receives no new
+> features or releases.
+
 `cudaembedr` is the embedding layer of the **cudaverse**. It gives UMAP,
 t-SNE, and diffusion-map-style embeddings a common result structure and accepts
 matrices, `cuda_pca` results, `cudatensor` objects, and `cudacell_workflow`
